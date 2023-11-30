@@ -1,0 +1,6 @@
+# Generated folders
+/zig-cache/
+/zig-out/
+
+# Generated images
+*.ppm
