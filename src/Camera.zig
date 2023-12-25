@@ -9,6 +9,7 @@ const Color = Vec3;
 const HitRecord = collision.HitRecord;
 const Hittable = collision.Hittable;
 const Point3 = Vec3;
+const Random = std.rand.Random;
 
 aspect_ratio: f64,
 
@@ -21,9 +22,12 @@ pixel_00_loc: Point3,
 pixel_delta_u: Vec3,
 pixel_delta_v: Vec3,
 
+samples_per_pixel: usize = 100,
+rand: Random,
+
 const Self = @This();
 
-pub fn new(aspect_ratio: f64, image_width: usize) Self {
+pub fn new(aspect_ratio: f64, image_width: usize, rand: Random) Self {
     const image_height: usize = blk: {
         const height: usize = @intFromFloat(@as(f64, @floatFromInt(image_width)) / aspect_ratio);
 
@@ -65,6 +69,7 @@ pub fn new(aspect_ratio: f64, image_width: usize) Self {
         .pixel_00_loc = pixel_00_loc,
         .pixel_delta_u = pixel_delta_u,
         .pixel_delta_v = pixel_delta_v,
+        .rand = rand,
     };
 }
 
@@ -79,13 +84,15 @@ pub fn render(self: Self, writer: anytype, world: Hittable) !void {
         std.debug.print("\rScanlines remaining: {}", .{self.image_height - h});
 
         for (0..self.image_width) |w| {
-            const pixel_center = self.pixel_00_loc
-                .add(self.pixel_delta_u.mul_scalar(@floatFromInt(w)))
-                .add(self.pixel_delta_v.mul_scalar(@floatFromInt(h)));
-            const ray_direction = pixel_center.sub(self.center);
+            var pixel_color = Color.default();
 
-            const ray = Ray.new(self.center, ray_direction);
-            const pixel_color = ray_color(ray, world);
+            for (0..self.samples_per_pixel) |_| {
+                const ray = self.sample_camera_ray(w, h);
+                pixel_color = pixel_color.add(ray_color(ray, world));
+            }
+
+            // Normalize pixel value by dividing through number of samples
+            pixel_color = pixel_color.div_scalar(@floatFromInt(self.samples_per_pixel));
 
             try writer.print("{}\n", .{pixel_color});
         }
@@ -112,4 +119,27 @@ fn ray_color(ray: Ray, world: Hittable) Color {
     return start_color
         .mul_scalar(1.0 - a)
         .add(end_color.mul_scalar(a));
+}
+
+fn sample_camera_ray(self: Self, i: usize, j: usize) Ray {
+    const pixel_center = self.pixel_00_loc
+        .add(self.pixel_delta_u.mul_scalar(@floatFromInt(i)))
+        .add(self.pixel_delta_v.mul_scalar(@floatFromInt(j)));
+    const pixel_sample = pixel_center.add(self.pixel_sample_square());
+
+    const ray_origin = self.center;
+    const ray_direction = pixel_sample.sub(ray_origin);
+
+    return Ray{
+        .origin = ray_origin,
+        .direction = ray_direction,
+    };
+}
+
+fn pixel_sample_square(self: Self) Vec3 {
+    const px = -0.5 * self.rand.float(f64);
+    const py = -0.5 * self.rand.float(f64);
+
+    return self.pixel_delta_u.mul_scalar(px)
+        .add(self.pixel_delta_v.mul_scalar(py));
 }

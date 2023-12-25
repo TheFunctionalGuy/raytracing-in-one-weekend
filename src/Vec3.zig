@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const Interval = @import("Interval.zig");
+
 underlying_vector: @Vector(3, f64) = .{ 0.0, 0.0, 0.0 },
 
 const Self = @This();
@@ -78,9 +80,11 @@ pub fn format(self: Self, comptime fmt: []const u8, options: std.fmt.FormatOptio
     }
     _ = options;
 
-    const e_1: usize = @intFromFloat(255.999 * self.underlying_vector[0]);
-    const e_2: usize = @intFromFloat(255.999 * self.underlying_vector[1]);
-    const e_3: usize = @intFromFloat(255.999 * self.underlying_vector[2]);
+    const intensity = Interval.new(0.000, 0.999);
+
+    const e_1: usize = @intFromFloat(256 * intensity.clamp(self.x()));
+    const e_2: usize = @intFromFloat(256 * intensity.clamp(self.y()));
+    const e_3: usize = @intFromFloat(256 * intensity.clamp(self.z()));
 
     try writer.print("{} {} {}", .{ e_1, e_2, e_3 });
 }
