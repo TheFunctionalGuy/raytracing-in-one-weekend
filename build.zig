@@ -8,6 +8,7 @@ pub fn build(b: *std.Build) void {
     {
         const exe_options = b.addOptions();
         exe_options.addOption(bool, "use_gpa", b.option(bool, "use_gpa", "Use GeneralPurposeAllocator (good for debugging)") orelse (optimize == .Debug));
+        exe_options.addOption(bool, "disable_anti_aliasing", b.option(bool, "disable_anti_aliasing", "Disable anti-aliasing") orelse false);
 
         const exe = b.addExecutable(.{
             .name = "raytracing-in-one-weekend",

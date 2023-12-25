@@ -1,4 +1,5 @@
 const std = @import("std");
+const build_options = @import("build_options");
 const collision = @import("collision.zig");
 
 const Interval = @import("Interval.zig");
@@ -22,7 +23,7 @@ pixel_00_loc: Point3,
 pixel_delta_u: Vec3,
 pixel_delta_v: Vec3,
 
-samples_per_pixel: usize = 100,
+samples_per_pixel: usize = if (build_options.disable_anti_aliasing) 1 else 100,
 rand: Random,
 
 const Self = @This();
@@ -137,8 +138,8 @@ fn sample_camera_ray(self: Self, i: usize, j: usize) Ray {
 }
 
 fn pixel_sample_square(self: Self) Vec3 {
-    const px = -0.5 * self.rand.float(f64);
-    const py = -0.5 * self.rand.float(f64);
+    const px = if (build_options.disable_anti_aliasing) 0.0 else -0.5 * self.rand.float(f64);
+    const py = if (build_options.disable_anti_aliasing) 0.0 else -0.5 * self.rand.float(f64);
 
     return self.pixel_delta_u.mul_scalar(px)
         .add(self.pixel_delta_v.mul_scalar(py));
