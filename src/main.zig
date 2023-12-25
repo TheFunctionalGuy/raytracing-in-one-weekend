@@ -46,7 +46,8 @@ pub fn main() !void {
     try world.hit_list.add(Hittable{ .sphere = Sphere.new(Point3.new(0, -100.5, -1), 100) });
 
     // Camera
-    const camera = Camera.new(16.0 / 9.0, 400, rng.random());
+    const image_width = build_options.image_width;
+    const camera = Camera.new(16.0 / 9.0, image_width, rng.random());
 
     // Debug output
     std.debug.print("Image width:  {d}\n", .{camera.image_width});
